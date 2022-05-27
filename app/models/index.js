@@ -3,10 +3,10 @@ const Sequelize = require('sequelize');
 const sequelize = new Sequelize(process.env.DATABASE_URL || 'postgres://postgres:123@localhost:5432/healthsheetdb', {
   ssl: true,
   dialectOptions: {
-    // encrypt: true,
-    // ssl: {
-    //   rejectUnauthorized: false
-    // }
+    encrypt: true,
+    ssl: {
+      rejectUnauthorized: false
+    }
   },
 });
 
