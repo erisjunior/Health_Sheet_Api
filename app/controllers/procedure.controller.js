@@ -1,4 +1,5 @@
 const db = require('../models');
+
 const Procedure = db.procedures;
 const User = db.users;
 const Op = db.Sequelize.Op;
@@ -37,7 +38,7 @@ exports.findOne = (req, res) => {
 };
 
 exports.create = (req, res) => {
-  Procedure.create(req.body)
+  Procedure.create({ ...req.body, file: req.file.filename })
     .then(data => {
       res.send({
         message: 'Procedure was created successfully!',

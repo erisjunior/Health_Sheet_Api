@@ -1,5 +1,6 @@
 module.exports = app => {
   const procedures = require('../controllers/procedure.controller.js');
+  const upload = require('../services/upload');
 
   const router = require('express').Router();
 
@@ -7,7 +8,7 @@ module.exports = app => {
 
   router.get('/:id', procedures.findOne);
 
-  router.post('/', procedures.create);
+  router.post('/', upload.single('file'), procedures.create);
 
   router.put('/:id', procedures.update);
 

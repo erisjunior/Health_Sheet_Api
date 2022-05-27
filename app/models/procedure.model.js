@@ -12,6 +12,9 @@ module.exports = (sequelize, Sequelize, User) => {
     category: {
       type: Sequelize.STRING
     },
+    file: {
+      type: Sequelize.STRING
+    },
   });
 
   Procedure.hasOne(User)

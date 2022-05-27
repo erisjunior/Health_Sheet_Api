@@ -16,6 +16,6 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.users = require('./user.model.js')(sequelize, Sequelize);
-db.procedures = require('./procedure.model.js')(sequelize, Sequelize);
+db.procedures = require('./procedure.model.js')(sequelize, Sequelize, db.users);
 
 module.exports = db;
