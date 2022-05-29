@@ -19,7 +19,7 @@ exports.find = async (req, res) => {
 
     res.send(response);
   } catch (err) {
-    res.status(500).send({ message: err.message || 'Error retrieving user with id=' + id });
+    res.status(500).send({ message: err.message || `Error retrieving user with id=${id}` });
   }
 };
 
@@ -45,7 +45,7 @@ exports.update = async (req, res) => {
       res.send({ message: `Cannot update user with id=${id}. Maybe user was not found or req.body is empty!` });
     }
   } catch (err) {
-    res.status(500).send({ message: err.message || 'Error updating user with id=' + id });
+    res.status(500).send({ message: err.message || `Error updating user with id=${id}` });
   }
 };
 

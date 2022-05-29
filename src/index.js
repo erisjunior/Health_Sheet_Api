@@ -17,9 +17,7 @@ app.use('/files', express.static(path.resolve(__dirname, '..', 'temp', 'uploads'
 
 db.sequelize.sync();
 
-// db.sequelize.sync({ force: true }).then(() => {
-//   console.log('Drop and re-sync db.');
-// });
+// db.sequelize.sync({ force: true })
 
 require('./routes/user.routes')(app);
 require('./routes/procedure.routes')(app);
