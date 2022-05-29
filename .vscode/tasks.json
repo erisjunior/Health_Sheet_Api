@@ -3,10 +3,10 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "start",
+			"script": "dev",
 			"problemMatcher": [],
-			"label": "npm: start",
-			"detail": "node ./server.js",
+			"label": "yarn: dev",
+			"detail": "nodemon src/",
 			"group": {
 				"kind": "build",
 				"isDefault": true
