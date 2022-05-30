@@ -25,11 +25,19 @@ const removeFile = async (fileKey) => {
 
 exports.findAll = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { userId, type, category } = req.query;
     let where = {};
 
     if (userId) {
-      where = { ...where, 'userId': userId };
+      where.userId = userId;
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    if (category) {
+      where.category = category;
     }
 
     const response = await Procedure.findAll({
