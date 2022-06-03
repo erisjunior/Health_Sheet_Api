@@ -19,7 +19,7 @@ const removeFile = async (fileKey) => {
       Key: fileKey
     }).promise();
   } else {
-    await promisify(fs.unlink)(path.resolve(__dirname, '..', '..', 'temp', 'uploads', fileKey))
+    await promisify(fs.unlink)(path.resolve(__dirname, '..', '..', 'temp', 'uploads', fileKey));
   }
 }
 
@@ -79,7 +79,7 @@ exports.create = async (req, res) => {
       file = req.file.location || `${process.env.APP_URL}/files/${fileKey}`;
     }
 
-    const response = await Procedure.create({ ...req.body, file, fileKey });
+    const response = await Procedure.create({ ...req.body, file, file_key: fileKey });
     res.send(response);
   } catch (err) {
     await removeFile(fileKey);
@@ -110,7 +110,7 @@ exports.update = async (req, res) => {
       await removeFile(procedure.fileKey);
     }
 
-    const response = await Procedure.update({ ...req.body, file, fileKey }, { where: { id } });
+    const response = await Procedure.update({ ...req.body, file, file_key: fileKey }, { where: { id } });
 
     if (response == 1) {
       res.send({ message: 'Procedure was updated successfully.' });
@@ -139,7 +139,7 @@ exports.delete = async (req, res) => {
     const response = await Procedure.destroy({ where: { id }, truncate: false })
 
     if (response == 1) {
-      await removeFile(procedure.fileKey);
+      await removeFile(procedure.file_key);
 
       res.send({ message: 'Procedure was deleted successfully.' });
     } else {

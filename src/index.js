@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use('/files', express.static(path.resolve(__dirname, '..', 'temp', 'uploads')));
 
-db.sequelize.sync();
+db.sequelize.sync({ alter: true });
 
 // db.sequelize.sync({ force: true })
 

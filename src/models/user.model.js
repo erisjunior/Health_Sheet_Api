@@ -21,5 +21,8 @@ module.exports = {
   },
   gender: {
     type: Sequelize.STRING
+  },
+  health_info: {
+    type: Sequelize.TEXT
   }
 };

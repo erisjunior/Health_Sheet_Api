@@ -16,7 +16,7 @@ module.exports = {
   file: {
     type: Sequelize.STRING
   },
-  fileKey: {
+  file_key: {
     type: Sequelize.STRING
   }
 };
