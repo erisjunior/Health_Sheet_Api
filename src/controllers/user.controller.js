@@ -1,3 +1,6 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const db = require('../models');
 const User = db.users;
 
@@ -21,28 +24,57 @@ const formatHealthInfoToResponse = (healthInfo = "") => {
   return JSON.parse(healthInfo);
 }
 
-exports.findAll = async (req, res) => {
+exports.register = async (req, res) => {
   try {
-    const response = await User.findAll();
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).send({ message: 'Email and password required!' });
+    }
 
-    const users = response.map(user => ({
-      ...user.dataValues,
-      health_info: formatHealthInfoToResponse(user.dataValues.health_info),
-    }));
+    const oldUser = await User.findOne({ where: { email: req.body.email } });
 
-    res.send(users);
+    if (oldUser) {
+      return res.status(400).send({ message: 'Email already used!' });
+    }
+
+    const password = await bcrypt.hash(req.body.password, 10);
+
+    const healthInfo = formatHealthInfoToDatabase(req.body.health_info);
+
+    const user = await User.create({ ...req.body, password, health_info: healthInfo });
+
+    delete user.dataValues.password;
+
+    user.dataValues.token = jwt.sign({ userId: user.dataValues.id, email: user.dataValues.email }, process.env.TOKEN_KEY, { expiresIn: "10h" })
+
+    res.send(user);
   } catch (err) {
-    res.status(500).send({ message: err.message || 'Some error occurred while retrieving users.' });
+    res.status(500).send({ message: err.message || 'Error creating user' });
   }
 };
 
-exports.find = async (req, res) => {
+exports.login = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { email, password } = req.body;
 
-    const response = await User.findByPk(id);
+    if (!email || !password) {
+      return res.status(400).send({ message: 'Email and password required!' });
+    }
 
-    const user = {...response.dataValues, health_info: formatHealthInfoToResponse(response.dataValues.health_info)};
+    const foundUser = await User.findOne({ where: { email } });
+
+    if (!foundUser) {
+      return res.status(404).send({ message: 'User not found.' });
+    }
+
+    if (!(await bcrypt.compare(password, foundUser.password))) {
+      return res.status(400).send({ message: 'Invalid credentials.' });
+    }
+
+    delete foundUser.dataValues.password;
+
+    foundUser.dataValues.token = jwt.sign({ userId: foundUser.dataValues.id, email: foundUser.dataValues.email }, process.env.TOKEN_KEY, { expiresIn: "10h" })
+
+    const user = {...foundUser.dataValues, health_info: formatHealthInfoToResponse(foundUser.dataValues.health_info)};
 
     res.send(user);
   } catch (err) {
@@ -50,25 +82,19 @@ exports.find = async (req, res) => {
   }
 };
 
-exports.create = async (req, res) => {
-  try {
-    const healthInfo = formatHealthInfoToDatabase(req.body.health_info);
-
-    const response = await User.create({ ...req.body, health_info: healthInfo });
-
-    res.send(response);
-  } catch (err) {
-    res.status(500).send({ message: err.message || 'Error creating user' });
-  }
-};
-
 exports.update = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.user;
 
-    const healthInfo = formatHealthInfoToDatabase(req.body.health_info);
+    if (req.body.health_info) {
+      req.body.health_info = formatHealthInfoToDatabase(req.body.health_info);
+    }
 
-    const response = await User.update({ ...req.body, health_info: healthInfo }, { where: { id } })
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, 10);
+    }
+
+    const response = await User.update(req.body, { where: { id: userId } })
 
     if (response == 1) {
       res.send({ message: 'User was updated successfully.' });
@@ -82,9 +108,9 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.user;
 
-    const response = await User.destroy({ where: { id }, truncate: false });
+    const response = await User.destroy({ where: { id: userId }, truncate: false });
 
     if (response == 1) {
       res.send({ message: 'User was deleted successfully.' });

@@ -10,9 +10,8 @@ const User = db.users;
 
 const s3 = new aws.S3();
 
-const userInclude = { model: User, as: 'user' }
-
 const removeFile = async (fileKey) => {
+  if (!fileKey) return;
   if (process.env.STORAGE_TYPE === 's3') {
     await s3.deleteObject({
       Bucket: 'health-sheet',
@@ -25,8 +24,10 @@ const removeFile = async (fileKey) => {
 
 exports.findAll = async (req, res) => {
   try {
-    const { userId, type, category } = req.query;
-    let where = {};
+    const { type, category } = req.query;
+    const { userId } = req.user;
+
+    const where = {};
 
     if (userId) {
       where.userId = userId;
@@ -40,12 +41,12 @@ exports.findAll = async (req, res) => {
       where.category = category;
     }
 
-    const response = await Procedure.findAll({
+    const procedures = await Procedure.findAll({
       where,
-      include: [userInclude],
+      include: [{ model: User, as: 'user' }],
     });
 
-    res.send(response);
+    res.send(procedures);
   } catch (err) {
     res.status(500).send({ message: err.message || 'Some error   occurred while retrieving procedures.' });
   }
@@ -54,11 +55,17 @@ exports.findAll = async (req, res) => {
 exports.find = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.user;
 
-    const response = await Procedure.findByPk(id, {
-      include: [userInclude],
+    const procedure = await Procedure.findByPk(id, {
+      include: [{ model: User, as: 'user', where: { id: userId } }],
     });
-    res.send(response);
+
+    if (!procedure) {
+      return res.status(404).send({ message: 'Procedure not found.' });
+    }
+
+    res.send(procedure);
   } catch (err) {
     res.status(500).send({ message: err.message || `Error retrieving procedure with id=${id}` });
   }
@@ -69,7 +76,8 @@ exports.create = async (req, res) => {
   let fileKey = null;
 
   try {
-    if (!req.body.userId) {
+    const { userId } = req.user;
+    if (!req.body.userId && !userId) {
       return res.status(400).send({ message: 'User id is required' });
     }
 
@@ -79,14 +87,14 @@ exports.create = async (req, res) => {
       file = req.file.location || `${process.env.APP_URL}/files/${fileKey}`;
     }
 
-    const response = await Procedure.create({ ...req.body, file, file_key: fileKey });
-    res.send(response);
+    const procedure = await Procedure.create({ ...req.body, userId: req.body.userId || userId, file, file_key: fileKey });
+    res.send(procedure);
   } catch (err) {
     await removeFile(fileKey);
 
     let errorMessage = err.message || 'Error creating procedure'
 
-    if (err.original.constraint === 'procedures_userId_fkey') {
+    if (err.original?.constraint === 'procedures_userId_fkey') {
       errorMessage = 'User does not exist.'
     }
 
@@ -100,6 +108,7 @@ exports.update = async (req, res) => {
 
   try {
     const { id } = req.params;
+    const { userId } = req.user;
 
     if (req.file) {
       fileKey = req.file.key;
@@ -110,7 +119,7 @@ exports.update = async (req, res) => {
       await removeFile(procedure.fileKey);
     }
 
-    const response = await Procedure.update({ ...req.body, file, file_key: fileKey }, { where: { id } });
+    const response = await Procedure.update({ ...req.body, file, file_key: fileKey }, { where: { id, userId } });
 
     if (response == 1) {
       res.send({ message: 'Procedure was updated successfully.' });
@@ -122,7 +131,7 @@ exports.update = async (req, res) => {
 
     let errorMessage = err.message || `Error updating procedure with id=${id}`
 
-    if (err.original.constraint === 'procedures_userId_fkey') {
+    if (err.original?.constraint === 'procedures_userId_fkey') {
       errorMessage = 'User does not exist.'
     }
 
@@ -133,10 +142,11 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.user;
 
     const procedure = await Procedure.findByPk(id);
 
-    const response = await Procedure.destroy({ where: { id }, truncate: false })
+    const response = await Procedure.destroy({ where: { id, userId }, truncate: false })
 
     if (response == 1) {
       await removeFile(procedure.file_key);

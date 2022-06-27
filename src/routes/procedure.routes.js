@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const multer = require('multer');
 
+const authMiddleware = require('../middleware/auth');
 const procedures = require('../controllers/procedure.controller.js');
 const multerConfig = require('../config/multer.js');
 
@@ -15,5 +16,5 @@ module.exports = app => {
 
   router.delete('/:id', procedures.delete);
 
-  app.use('/procedures', router);
+  app.use('/procedures', authMiddleware, router);
 };
