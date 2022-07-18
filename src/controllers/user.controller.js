@@ -5,7 +5,7 @@ const db = require('../models');
 const User = db.users;
 
 const formatHealthInfoToDatabase = (healthInfo = {}) => {
-  if (healthInfo) {
+  if (healthInfo && healthInfo !== '') {
     if (typeof healthInfo === 'string') {
       try {
         JSON.parse(healthInfo);
